@@ -1,10 +1,9 @@
 <?php
 
-// Database connection details
-$servername = '127.0.0.1'; 
-$username = 'u510162695_fos_db'; 
-$password = '1Fos_db_password'; 
-$dbname = 'u510162695_fos_db'; 
+$servername = '127.0.0.1'; // Remote server address
+$username = 'u510162695_fos_db'; // Your database username
+$password = '1Fos_db_password'; // Your database password
+$dbname = 'u510162695_fos_db'; // Your database name
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -14,42 +13,34 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Modify the table to add recaptcha_token
-$alter_sql = "ALTER TABLE user_info ADD recaptcha_token VARCHAR(255) NOT NULL AFTER password";
-if ($conn->query($alter_sql) === TRUE) {
-    echo "Column recaptcha_token added successfully.<br>";
-} else {
-    echo "Error adding column: " . $conn->error . "<br>";
-}
-
-// Query to describe the table
-$table_name = 'user_info';
-$sql = "DESCRIBE $table_name";
-
+// Query to fetch all rows from user_info table
+$sql = "SELECT * FROM user_info";
 $result = $conn->query($sql);
 
 if ($result->num_rows > 0) {
+    echo "<h1>User Info Table</h1>";
     echo "<table border='1'>";
-    echo "<tr><th>Field</th><th>Type</th><th>Null</th><th>Key</th><th>Default</th><th>Extra</th></tr>";
-
-    // Output data for each row
+    echo "<tr>";
+    // Fetch column names dynamically
+    while ($fieldinfo = $result->fetch_field()) {
+        echo "<th>" . htmlspecialchars($fieldinfo->name) . "</th>";
+    }
+    echo "</tr>";
+    
+    // Fetch and display rows
     while ($row = $result->fetch_assoc()) {
         echo "<tr>";
-        echo "<td>" . $row['Field'] . "</td>";
-        echo "<td>" . $row['Type'] . "</td>";
-        echo "<td>" . $row['Null'] . "</td>";
-        echo "<td>" . $row['Key'] . "</td>";
-        echo "<td>" . $row['Default'] . "</td>";
-        echo "<td>" . $row['Extra'] . "</td>";
+        foreach ($row as $value) {
+            echo "<td>" . htmlspecialchars($value) . "</td>";
+        }
         echo "</tr>";
     }
-
     echo "</table>";
 } else {
-    echo "No data found for the table description.";
+    echo "No data found in the user_info table.";
 }
 
-// Close connection
+// Close the connection
 $conn->close();
 
 ?>
