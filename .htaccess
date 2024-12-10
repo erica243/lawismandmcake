@@ -1,18 +1,4 @@
 # Enable URL rewriting
 RewriteEngine On
 
-# Remove .php extension for all files
-RewriteCond %{REQUEST_FILENAME}.php -f
-RewriteRule ^(.*)$ $1.php [L]
-
-# Redirect requests with .php to clean URLs
-RewriteCond %{THE_REQUEST} \s([^.]+)\.php [NC]
-RewriteRule ^(.*)\.php$ /$1 [R=301,L]
-
-# Handle query strings (e.g., index?page=home)
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ $1.php [L]
-
-# Optional: Remove 'index' from URLs (clean up homepage access)
-RewriteRule ^index$ / [L,R=301]
+ 
