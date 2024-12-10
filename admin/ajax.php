@@ -8,6 +8,7 @@ require '../vendor/autoload.php';
 // Use PHPMailer namespace
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
 $crud = new Action();
 
 // Check if 'action' exists in either GET or POST
