@@ -10,6 +10,7 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}\.php -f
 RewriteRule ^([^/]+)$ $1.php [L]
 
-# Redirect .php URLs to clean URLs (optional, for redirecting old URLs)
+# Do not affect URLs with query parameters (e.g., index.php?page=home)
+RewriteCond %{QUERY_STRING} ^$
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^(.*)\.php$ /$1 [R=301,L]
