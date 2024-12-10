@@ -59,17 +59,10 @@
             $(this).find('.alert-danger').remove();
         }
 
-        $(document).ready(function() {
-    $('#login-frm').submit(function(e) {
-        e.preventDefault(); // Prevent form submission
-
         // Generate reCAPTCHA token
         grecaptcha.execute('6LcoapYqAAAAADr1OaM8FGmlLTTnF0nNkGOCmVI0', { action: 'login' }).then(function (token) {
             // Append token to the form as a hidden input
             $('#login-frm').append('<input type="hidden" name="recaptcha_token" value="' + token + '">');
-
-            // Log the serialized form data (for debugging)
-            console.log($('#login-frm').serialize());
 
             // Submit the form data via AJAX
             $.ajax({
@@ -92,8 +85,6 @@
             });
         });
     });
-});
-
 
     // Handle navigation between login and forgot password sections
     $('#forgot_password').click(function () {
