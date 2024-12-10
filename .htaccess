@@ -1,13 +1,15 @@
 # Enable URL rewriting
 RewriteEngine On
 
-# Remove the .php extension from the URL
+# Remove the .php extension from the URL for all .php files
 RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.*?)/$ $1.php [L]
 RewriteRule ^(.*)$ $1.php [L]
 
 # Optionally, force redirect to remove .php extension (if someone enters the URL with .php)
-RewriteCond %{THE_REQUEST} \s/index\.php [NC]
-RewriteRule ^index\.php$ /index [R=301,L]
+RewriteCond %{THE_REQUEST} \s/(.*\.php) [NC]
+RewriteRule ^(.*)\.php$ /$1 [R=301,L]
 
-# Ensuring there is no conflict with the existing PHP functions
-# If you have specific routing or functions for URLs, you can add additional conditions
+# Ensure that subdirectories (like /admin/login.php) also work
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.*)/$ /$1.php [L]
