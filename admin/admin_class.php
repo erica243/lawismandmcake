@@ -33,7 +33,7 @@ Class Action {
         return 3;
     }
 
-    Manilyn Verdida De Mesa
+   
     function login2() {
             extract($_POST);
         
