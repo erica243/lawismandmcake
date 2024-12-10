@@ -1,4 +1,9 @@
+
+<?php 
+header('Content-Type: application/json');
+?>
 <?php session_start(); ?>
+
 <div class="container-fluid">
     <!-- Login Section -->
     <div id="login-section">
@@ -85,6 +90,7 @@
             });
         });
     });
+
    // Handle navigation between login and forgot password sections
   $('#forgot_password').click(function () {
         $('#login-section').hide(); // Hide login form
