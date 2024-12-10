@@ -677,7 +677,10 @@ function forgot_password() {
     if ($stmt->affected_rows === 0) {
         return json_encode(['status' => 'error', 'message' => 'Failed to store OTP']);
     }
-    
+    ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
     // Send email using PHPMailer
     require 'PHPMailer/PHPMailer.php';
     require 'PHPMailer/SMTP.php';
