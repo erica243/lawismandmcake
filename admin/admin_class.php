@@ -19,20 +19,34 @@ Class Action {
     function login() {
         extract($_POST);
         $qry = $this->db->query("SELECT * FROM `users` WHERE username = '".$username."'");
+        
         if($qry->num_rows > 0) {
             $result = $qry->fetch_array();
             $is_verified = password_verify($password, $result['password']);
+            
             if($is_verified) {
+                // Generate a session token
+                $session_token = bin2hex(random_bytes(32));  // Generates a secure random token
+                
+                // Store the session token in the database
+                $this->db->query("REPLACE INTO `user_sessions` (user_id, session_token) VALUES ('" . $result['id'] . "', '$session_token')");
+                
+                // Store the session token in the session
+                $_SESSION['session_token'] = $session_token;
+                $_SESSION['login_id'] = $result['id'];
+                
+                // Store user data in session
                 foreach ($result as $key => $value) {
-                    if($key != 'password' && !is_numeric($key))
+                    if($key != 'password' && !is_numeric($key)) {
                         $_SESSION['login_'.$key] = $value;
+                    }
                 }
                 return 1;
             }
         }
         return 3;
     }
-
+    
    
     function login2() {
             extract($_POST);
@@ -114,13 +128,20 @@ Class Action {
         
             return json_encode(['status' => 'error', 'message' => 'Email or password is incorrect.']);
         }
-    function logout() {
-        session_destroy();
-        foreach ($_SESSION as $key => $value) {
-            unset($_SESSION[$key]);
+        function logout() {
+            // Destroy the session token in the database
+            if (isset($_SESSION['login_id'])) {
+                $user_id = $_SESSION['login_id'];
+                $this->db->query("DELETE FROM `user_sessions` WHERE user_id = '$user_id'");
+            }
+            
+            // Destroy the session
+            session_destroy();
+            foreach ($_SESSION as $key => $value) {
+                unset($_SESSION[$key]);
+            }
+            header("location:login.php");
         }
-        header("location:login.php");
-    }
 
     function logout2() {
         session_destroy();
