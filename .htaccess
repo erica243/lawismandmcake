@@ -1,13 +1,22 @@
 # Enable URL rewriting
 RewriteEngine On
 
-# Remove the .php extension from the URL
+# Remove the .php extension from the URL if the file exists
 RewriteCond %{REQUEST_FILENAME}.php -f
 RewriteRule ^(.*)$ $1.php [L]
 
-# Optionally, force redirect to remove .php extension (if someone enters the URL with .php)
+# Force redirect to remove .php extension (if someone enters the URL with .php)
 RewriteCond %{THE_REQUEST} \s/index\.php [NC]
 RewriteRule ^index\.php$ /index [R=301,L]
 
-# Ensuring there is no conflict with the existing PHP functions
-# If you have specific routing or functions for URLs, you can add additional conditions
+# Ensure other resources (CSS, JS, images, etc.) are not processed by PHP rules
+RewriteCond %{REQUEST_FILENAME} !\.(css|js|jpg|jpeg|png|gif|svg|ico|mp4|webp|woff2|ttf|eot|otf)$
+
+# Optionally, force trailing slashes for clean URLs (uncomment if desired)
+# RewriteCond %{REQUEST_URI} !/$
+# RewriteRule ^([^/]+)$ /$1/ [R=301,L]
+
+# Additional rules to handle non-PHP URLs (if you have a custom routing system)
+# Add your custom rules here to avoid conflicts
+
+# End of .htaccess file
