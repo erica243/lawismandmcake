@@ -281,10 +281,16 @@ Class Action {
         // Extract the cart ID from the URL parameter
         extract($_GET);
         
+        // Ensure the ID is a valid integer
+        if (!is_numeric($id)) {
+            echo "Invalid ID";
+            return;
+        }
+    
         // Get the product details (quantity and stock) from the cart
         $product_query = $this->db->query("SELECT c.qty, p.stock, c.product_id FROM cart c INNER JOIN product_list p ON c.product_id = p.id WHERE c.id = $id");
         $product = $product_query->fetch_assoc();
-        
+    
         if ($product) {
             // Get the product quantity in the cart and current stock
             $product_qty = $product['qty'];
@@ -303,24 +309,25 @@ Class Action {
                 $delete_query = $this->db->query("DELETE FROM cart WHERE id = $id");
     
                 if ($delete_query) {
-                    // Redirect back to the previous page if deletion is successful
-                    header('location:' . $_SERVER['HTTP_REFERER']);
+                    // Return success response
+                    echo 'success';
                     exit;
                 } else {
-                    // Handle error if deletion fails
-                    echo "Error: Unable to delete the item from the cart.";
+                    // Return error if deletion fails
+                    echo 'Error: Unable to delete the item from the cart.';
+                    exit;
                 }
             } else {
-                // Handle error if stock update fails
-                echo "Error: Unable to update the stock.";
+                // Return error if stock update fails
+                echo 'Error: Unable to update the stock.';
+                exit;
             }
         } else {
-            // Handle error if the cart item is not found
-            echo "Error: Cart item not found.";
+            // Return error if the cart item is not found
+            echo 'Error: Cart item not found.';
+            exit;
         }
     }
-    
-
     function add_to_cart() {
         extract($_POST);
         
