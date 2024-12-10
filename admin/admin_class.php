@@ -52,7 +52,7 @@ Class Action {
         
             // Verify reCAPTCHA token
             $recaptcha_secret = '6LcoapYqAAAAAKvZv36lF1Ru5fk24phEAjbhMak4';
-            $recaptcha_response = $_POST['token'];
+            $recaptcha_response = $_POST['recaptcha_token'];
         
             // Debug: Check if recaptcha_token is received
             if (empty($recaptcha_response)) {

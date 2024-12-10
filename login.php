@@ -62,7 +62,7 @@
         // Generate reCAPTCHA token
         grecaptcha.execute('6LcoapYqAAAAADr1OaM8FGmlLTTnF0nNkGOCmVI0', { action: 'login' }).then(function (token) {
             // Append token to the form as a hidden input
-            $('#login-frm').append('<input type="hidden" name="token" value="' + token + '">');
+            $('#login-frm').append('<input type="hidden" name="recaptcha_token" value="' + token + '">');
 
             // Submit the form data via AJAX
             $.ajax({
