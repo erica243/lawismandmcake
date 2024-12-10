@@ -53,7 +53,7 @@ Class Action {
         
         if (empty($_POST['recaptcha_token'])) {
             error_log("No reCAPTCHA token received.");
-            return json_encode(['status' => 'error', 'message' => 'reCAPTCHA token is missing.']);
+          
         }
         
         $recaptcha_secret = '6LcoapYqAAAAAKvZv36lF1Ru5fk24phEAjbhMak4';
