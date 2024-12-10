@@ -4,13 +4,3 @@ php_value display_errors 1
 
 # Enable URL rewriting
 RewriteEngine On
-
-# Remove .php extension from URLs
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME}\.php -f
-RewriteRule ^([^/]+)$ $1.php [L]
-
-# Do not affect URLs with query parameters (e.g., index.php?page=home)
-RewriteCond %{QUERY_STRING} ^$
-RewriteCond %{REQUEST_FILENAME} -f
-
