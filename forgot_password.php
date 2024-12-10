@@ -1,17 +1,16 @@
 <?php
-require_once('admin/db_connect.php'); // Database connection
+// forgot_password.php
+
+require_once('admin/db_connect.php'); // Include database connection
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require 'vendor/autoload.php'; // Autoload PHPMailer using Composer
+require 'vendor/autoload.php'; // Include PHPMailer
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'];
 
-    // Set the default timezone to Asia/Manila (or any desired Asia timezone)
-    date_default_timezone_set('Asia/Manila');
-
-    // Check if the email exists
+    // Check if email exists in the database
     $stmt = $conn->prepare("SELECT user_id, first_name FROM user_info WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -22,61 +21,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $userId = $user['user_id'];
         $firstName = $user['first_name'];
 
-        // Generate a secure token, reset code, and expiry time
+        // Generate reset token and other parameters
         $resetToken = bin2hex(random_bytes(32)); // Secure token
         $resetCode = random_int(100000, 999999); // 6-digit reset code
-        $tokenExpiry = date("Y-m-d H:i:s", strtotime("+1 hour")); // Set expiry time (1 hour from now)
+        $tokenExpiry = date("Y-m-d H:i:s", strtotime("+1 hour")); // Expiry time
 
-        // Set otp_expiry to the current time + 1 hour (Unix timestamp)
-        $otpExpiry = time() + 3600; // current time + 1 hour in seconds
-
-        // Save the token, reset code, otp_expiry, and token_expiry to the database
-        $updateStmt = $conn->prepare("UPDATE user_info SET token = ?, otp = ?, token_expiry = ?, otp_expiry = FROM_UNIXTIME(?) WHERE user_id = ?");
-        $updateStmt->bind_param("sisii", $resetToken, $resetCode, $tokenExpiry, $otpExpiry, $userId);
+        // Save token and other info in the database
+        $updateStmt = $conn->prepare("UPDATE user_info SET token = ?, otp = ?, token_expiry = ? WHERE user_id = ?");
+        $updateStmt->bind_param("ssis", $resetToken, $resetCode, $tokenExpiry, $userId);
         $updateStmt->execute();
-   $updateStmt->execute();
 
-        // Prepare the email content
-        $resetLink = "https://mandm-lawis.com/reset_password.php?token={$resetToken}";
+        // Send email with the reset link
+        $resetLink = "https://" . $_SERVER['HTTP_HOST'] . "/reset_password.php?token={$resetToken}";
         $emailContent = "
-            <p>You have requested to reset your password.</p>
+            <p>You requested a password reset.</p>
             <p>Your reset code is: <strong>{$resetCode}</strong></p>
-            <p>Click the link below to reset your password:</p>
-            <p><a href='{$resetLink}'>Reset Password</a></p>
-            <p>If you did not request this, please ignore this email.</p>
+            <p>Click <a href='{$resetLink}'>here</a> to reset your password.</p>
         ";
 
-            // Send the email
-            $mail = new PHPMailer(true);
-            try {
-                // Mail server settings
-                $mail->isSMTP();
-                $mail->Host       = 'smtp.gmail.com';
-                $mail->SMTPAuth   = true;
-                $mail->Username   = 'mandmcakeorderingsystem@gmail.com'; // Replace with your email
-                $mail->Password   = 'dgld kvqo yecu wdka'; // Replace with your app password
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                $mail->Port       = 587;
-    
-                // Enable Debugging
-                $mail->SMTPDebug = 2; // 2 = client + server debug output
-    
-                // Email content
-                $mail->setFrom('mandmcakeorderingsystem@gmail.com', 'M&M Cake Ordering System'); // Sender
-                $mail->addAddress($email, $firstName); // Recipient
-                $mail->Subject = 'Password Reset Request';
-                $mail->isHTML(true); // Enable HTML content
-                $mail->Body = $emailContent;
-    
-                // Send the email
-                $mail->send();
-                echo json_encode(['status' => 'success', 'message' => 'Reset password email sent successfully.']);
-            } catch (Exception $e) {
-                // Log error or handle it
-                echo json_encode(['status' => 'error', 'message' => 'Failed to send email. Error: ' . $mail->ErrorInfo]);
-            }
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Email address not found.']);
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'mandmcakeorderingsystem@gmail.com';
+            $mail->Password = 'your-app-password';  // Use your Gmail App password
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = 587;
+            $mail->setFrom('mandmcakeorderingsystem@gmail.com', 'M&M Cake Ordering System');
+            $mail->addAddress($email, $firstName);
+            $mail->Subject = 'Password Reset Request';
+            $mail->isHTML(true);
+            $mail->Body = $emailContent;
+
+            $mail->send();
+            echo json_encode(['status' => 'success', 'message' => 'A reset link has been sent to your email.']);
+        } catch (Exception $e) {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to send email. Please try again.']);
         }
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Email address not found.']);
     }
-    ?>
+}
+?>
