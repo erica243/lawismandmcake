@@ -649,61 +649,75 @@ Class Action {
             return 0; // In case id is not set
         }
     }
-    function forgot_password() {
-        global $conn;
+   // Forgot Password Function
+function forgot_password() {
+    global $conn;
     
-        $email = $_POST['email'];
+    $email = $_POST['email'];
     
-        // Check if email exists
-        $stmt = $conn->prepare("SELECT user_id FROM user_info WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
+    // Check if email exists
+    $stmt = $conn->prepare("SELECT user_id FROM user_info WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
     
-        if ($result->num_rows === 0) {
-            return json_encode(['status' => 'failed', 'message' => 'Email not found in our records.']);
-        }
-    
-        // Generate reset code and store it
-        $code = rand(100000, 999999);
-        $reset_time = date('Y-m-d H:i:s');
-        $stmt = $conn->prepare("UPDATE user_info SET code = ?, reset_time = ? WHERE email = ?");
-        $stmt->bind_param("sss", $code, $reset_time, $email);
-        if (!$stmt->execute()) {
-            return json_encode(['status' => 'failed', 'message' => 'Failed to update reset code.']);
-        }
-    
-        // Send reset email
-        $reset_link = "http://mandm-lawis.com/reset_password.php?code=" . urlencode($code) . "&email=" . urlencode($email);
-        require 'PHPMailer/PHPMailer.php';
-        require 'PHPMailer/SMTP.php';
-        require 'PHPMailer/Exception.php';
-    
-        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-    
-        try {
-            $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com';
-            $mail->SMTPAuth = true;
-            $mail->Username = 'mandmcakeorderingsystem@gmail.com'; 
-            $mail->Password = 'dgld kvqo yecu wdka'; 
-            $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port = 587;
-    
-            $mail->setFrom('your-email@gmail.com', 'Your System Name');
-            $mail->addAddress($email);
-    
-            $mail->isHTML(true);
-            $mail->Subject = 'Password Reset Request';
-            $mail->Body = "Click the following link to reset your password: <a href='$reset_link'>$reset_link</a>";
-    
-            $mail->send();
-            return json_encode(['status' => 'success', 'message' => 'A password reset link has been sent to your email.']);
-        } catch (Exception $e) {
-            return json_encode(['status' => 'failed', 'message' => 'Failed to send email: ' . $mail->ErrorInfo]);
-        }
+    if($result->num_rows === 0) {
+        return json_encode(['status' => 'error', 'message' => 'Email not found']);
     }
     
+    // Generate 6-digit OTP
+    $otp = rand(100000, 999999);
+    $expiry = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+    
+    // Store OTP in database
+    $stmt = $conn->prepare("UPDATE user_info SET otp = ?, otp_expiry = ?, reset_time = CURRENT_TIME() WHERE email = ?");
+    $stmt->bind_param("iss", $otp, $expiry, $email);
+    $stmt->execute();
+
+    if ($stmt->affected_rows === 0) {
+        return json_encode(['status' => 'error', 'message' => 'Failed to store OTP']);
+    }
+    
+    // Send email using PHPMailer
+    require 'PHPMailer/PHPMailer.php';
+    require 'PHPMailer/SMTP.php';
+    require 'PHPMailer/Exception.php';
+    
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+    
+    try {
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com'; 
+        $mail->SMTPAuth = true;
+        $mail->Username = 'mandmcakeorderingsystem@gmail.com'; 
+        $mail->Password = 'dgld kvqo yecu wdka'; 
+        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = 587;
+        
+        // Recipients
+        $mail->setFrom('mandmcakeorderingsystem@gmail.com', 'M&M Cake Ordering System');
+        $mail->addAddress($email);
+        
+        // Content
+        $mail->isHTML(true);
+        $mail->Subject = 'Password Reset OTP';
+        $mail->Body = "
+            <h2>Password Reset Request</h2>
+            <p>Your OTP for password reset is: <strong>$otp</strong></p>
+            <p>This OTP will expire in 15 minutes.</p>
+            <p>If you didn't request this, please ignore this email.</p>
+        ";
+        
+        $mail->send();
+        return json_encode(['status' => 'success']);
+        
+    } catch (Exception $e) {
+        error_log("PHPMailer Error: " . $mail->ErrorInfo);
+        return json_encode(['status' => 'error', 'message' => 'Email could not be sent. Error: ' . $mail->ErrorInfo]);
+    }
+}
+
 function reset_password() {
     global $conn;
 

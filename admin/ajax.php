@@ -8,7 +8,6 @@ require '../vendor/autoload.php';
 // Use PHPMailer namespace
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
-use PHPMailer\PHPMailer\SMTP;
 $crud = new Action();
 
 // Check if 'action' exists in either GET or POST
@@ -270,16 +269,44 @@ if ($action == 'send_otp') {
         echo json_encode(['success' => false, 'message' => 'Invalid email address.']);
     }
 }
-if (isset($_GET['action'])) {
-    $action = $_GET['action'];
-
-    if ($action == "forgot_password") {
-        // Use the admin_class method to handle forgot password logic
-        $response = $crud->forgot_password(); 
-        echo $response; // Return the response to the client
+if($action == "forgot_password"){
+    $email = $_POST['email'];
+    $query = $conn->query("SELECT * FROM user_info WHERE email = '$email'");
+    if($query->num_rows > 0){
+        $user = $query->fetch_assoc();
+        $code = rand(100000, 999999);
+        $reset_time = date('H:i:s');
+        
+        $conn->query("UPDATE user_info SET code = '$code', reset_time = '$reset_time' WHERE email = '$email'");
+        
+        // Send email
+        $to = $email;
+        $subject = "Password Reset Request";
+        $reset_link = "http://mandm-lawis.com/reset_password.php?code=".$code."&email=".$email;
+        $message = "Click the following link to reset your password: ".$reset_link;
+        $headers = "From: your@email.com";
+        
+        mail($to, $subject, $message, $headers);
+        
+        $resp['status'] = 'success';
+    }else{
+        $resp['status'] = 'failed';
+        $resp['message'] = 'Email not found in our records.';
     }
+    echo json_encode($resp);
 }
 
+
+if(isset($_GET['action'])) {
+    $action = $_GET['action'];
+    
+    // Handle forgot_password action
+    if ($action == "forgot_password") {
+        $save = $crud->forgot_password();
+        if ($save) {
+            echo $save; // Send the response (success/error) back to the client
+        }
+    }
 
     // Handle reset_password action
     if ($action == "reset_password") {
@@ -288,7 +315,7 @@ if (isset($_GET['action'])) {
             echo $save; // Send the response (success/error) back to the client
         }
     }
-if($action == "mark_notification_read"){
+}if($action == "mark_notification_read"){
     $notification_id = $_POST['notification_id'];
     $success = mark_notification_as_read($notification_id);
     
