@@ -269,6 +269,7 @@ if ($action == 'send_otp') {
         echo json_encode(['success' => false, 'message' => 'Invalid email address.']);
     }
 }
+
 if($action == "forgot_password"){
     $email = $_POST['email'];
     $query = $conn->query("SELECT * FROM user_info WHERE email = '$email'");
