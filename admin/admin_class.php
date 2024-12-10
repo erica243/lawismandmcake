@@ -656,45 +656,54 @@ function forgot_password() {
     if ($stmt->affected_rows === 0) {
         return json_encode(['status' => 'error', 'message' => 'Failed to store OTP']);
     }
-    
-    // Send email using PHPMailer
-    require 'PHPMailer/PHPMailer.php';
-    require 'PHPMailer/SMTP.php';
-    require 'PHPMailer/Exception.php';
-    
-    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-    
-    try {
-        // Server settings
-        $mail->isSMTP();
-        $mail->Host = 'smtp.gmail.com'; 
-        $mail->SMTPAuth = true;
-        $mail->Username = 'mandmcakeorderingsystem@gmail.com'; 
-        $mail->Password = 'dgld kvqo yecu wdka'; 
-        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = 587;
-        
-        // Recipients
-        $mail->setFrom('mandmcakeorderingsystem@gmail.com', 'M&M Cake Ordering System');
-        $mail->addAddress($email);
-        
-        // Content
-        $mail->isHTML(true);
-        $mail->Subject = 'Password Reset OTP';
-        $mail->Body = "
-            <h2>Password Reset Request</h2>
-            <p>Your OTP for password reset is: <strong>$otp</strong></p>
-            <p>This OTP will expire in 15 minutes.</p>
-            <p>If you didn't request this, please ignore this email.</p>
-        ";
-        
-        $mail->send();
-        return json_encode(['status' => 'success']);
-        
-    } catch (Exception $e) {
-        error_log("PHPMailer Error: " . $mail->ErrorInfo);
-        return json_encode(['status' => 'error', 'message' => 'Email could not be sent. Error: ' . $mail->ErrorInfo]);
+
+
+   
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+// Include PHPMailer autoloader
+require 'vendor/autoload.php';  // Update the path if necessary
+
+// Create a new PHPMailer instance
+$mail = new PHPMailer(true);
+
+try {
+    // Server settings
+    $mail->isSMTP();  // Use SMTP
+    $mail->Host = 'smtp.gmail.com';  // Change to your SMTP host
+    $mail->SMTPAuth = true;  // Enable SMTP authentication
+    $mail->Username = 'mandmcakeorderingsystem@gmail.com'; 
+    $mail->Password = 'dgld kvqo yecu wdka'; 
+     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;  // TLS encryption
+    $mail->Port = 587;  // SMTP port
+
+    // Recipients
+    $mail->setFrom('your_email@gmail.com', 'Mailer');  // Sender's email
+    $mail->addAddress('recipient@example.com', 'Joe User');  // Recipient's email
+
+    // Content
+       // Recipients
+       $mail->setFrom('mandmcakeorderingsystem@gmail.com', 'M&M Cake Ordering System');
+       $mail->addAddress($email);
+       
+       // Content
+       $mail->isHTML(true);
+       $mail->Subject = 'Password Reset OTP';
+       $mail->Body = "
+           <h2>Password Reset Request</h2>
+           <p>Your OTP for password reset is: <strong>$otp</strong></p>
+           <p>This OTP will expire in 15 minutes.</p>
+           <p>If you didn't request this, please ignore this email.</p>
+       ";// Send email
+    if ($mail->send()) {
+        echo 'Message has been sent successfully!';
+    } else {
+        echo 'Message could not be sent. Mailer Error: ' . $mail->ErrorInfo;
     }
+} catch (Exception $e) {
+    echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+}
 }
 
 function reset_password() {
