@@ -222,7 +222,7 @@
         }
     });
 }
-    $('.rem_cart').click(function(e){
+$('.rem_cart').click(function(e) {
     e.preventDefault(); // Prevent the default action (the link)
 
     // Use SweetAlert to show a confirmation dialog
@@ -237,8 +237,48 @@
         if (result.isConfirmed) {
             // Proceed with the deletion
             var id = $(this).attr('data-id');
-            window.location.href = "admin/ajax.php?action=delete_cart&id=" + id; // Redirect to delete the item
+            
+            $.ajax({
+                url: 'admin/ajax.php', // Your PHP file that handles the deletion
+                method: 'GET',
+                data: {
+                    action: 'delete_cart',
+                    id: id
+                },
+                success: function(response) {
+                    // Check if the response is 'success'
+                    if (response.trim() === 'success') {
+                        // Show SweetAlert success message and reload the page
+                        Swal.fire(
+                            'Deleted!',
+                            'The item has been removed from your cart.',
+                            'success'
+                        ).then(() => {
+                            location.reload(); // Reload the page after successful deletion
+                        });
+                    } else {
+                        // Handle the error if the response is not 'success'
+                        Swal.fire(
+                            'Error!',
+                            'There was an issue with the deletion.',
+                            'error'
+                        );
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Log the error details to the console
+                    console.log("Error: " + error);
+                    console.log("Status: " + status);
+                    console.log(xhr.responseText);
+                    Swal.fire(
+                        'Error!',
+                        'There was an issue with the request.',
+                        'error'
+                    );
+                }
+            });
         }
     });
 });
+
 </script>
