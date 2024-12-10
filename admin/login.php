@@ -250,45 +250,48 @@
         });
       });
 
-      $('#forgot-password-frm').submit(function (e) {
-    e.preventDefault(); // Prevent the default form submission
-
-    let email = $(this).find('[name="email"]').val();
-    if (!email) {
-        alert('Please enter a valid email address.');
-        return;
-    }
-
-    // Disable the submit button and show loading text
-    let submitButton = $('#forgot-password-frm button[type="submit"]');
-    submitButton.attr('disabled', true).html('Submitting...');
-
-    // Clear any previous alerts
-    $('#forgot-password-frm .alert').remove();
-
-    // AJAX request to send email
-    $.ajax({
-        url: 'forgot_password.php', // Path to the PHP script
-        method: 'POST',
-        data: $(this).serialize(),
-        dataType: 'json',
-        success: function (resp) {
-            // Re-enable the submit button
-            submitButton.removeAttr('disabled').html('Submit');
-
-            // Show response message
-            if (resp.status === 'success') {
-                $('#forgot-password-frm').prepend('<div class="alert alert-success">' + resp.message + '</div>');
-            } else {
-                $('#forgot-password-frm').prepend('<div class="alert alert-danger">' + resp.message + '</div>');
+      // Forgot Password form submission
+      $('#forgot-password-form').on('submit', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var submitButton = form.find('button[type="submit"]');
+        var resetEmail = $('#reset-email').val();
+        
+        // Clear previous messages
+        $('#forgot-form-message-container').empty();
+        
+        submitButton.prop('disabled', true).html('Sending...');
+        
+        $.ajax({
+          url: 'forgot_password.php',
+          method: 'POST',
+          data: { 
+            action: 'forgot_password', 
+            email: resetEmail 
+          },
+          error: function(err) {
+            console.log(err);
+            submitButton.prop('disabled', false).html('Reset Password');
+            $('#forgot-form-message-container').html('<div class="alert alert-danger">An error occurred. Please try again.</div>');
+          },
+          success: function(resp) {
+            submitButton.prop('disabled', false).html('Reset Password');
+            try {
+              var response = JSON.parse(resp);
+              if (response.status === 'success') {
+                $('#forgot-form-message-container').html('<div class="alert alert-success">' + response.message + '</div>');
+                // Optional: Clear the email field after successful submission
+                $('#reset-email').val('');
+              } else {
+                $('#forgot-form-message-container').html('<div class="alert alert-danger">' + response.message + '</div>');
+              }
+            } catch (e) {
+              $('#forgot-form-message-container').html('<div class="alert alert-danger">Unable to process request.</div>');
             }
-        },
-        error: function (xhr, status, error) {
-            submitButton.removeAttr('disabled').html('Submit');
-            $('#forgot-password-frm').prepend('<div class="alert alert-danger">An unexpected error occurred. Please try again later.</div>');
-        }
+          }
+        });
+      });
     });
-});
   </script>
 </body>
 
