@@ -1,10 +1,10 @@
 <?php
 
 // Database connection details
-$servername = '127.0.0.1'; // Typically 'localhost' or '127.0.0.1' for local servers
-$username = 'u510162695_fos_db'; // Your database username
-$password = '1Fos_db_password'; // Your database password
-$dbname = 'u510162695_fos_db'; // Your database name
+$servername = '127.0.0.1'; 
+$username = 'u510162695_fos_db'; 
+$password = '1Fos_db_password'; 
+$dbname = 'u510162695_fos_db'; 
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -12,6 +12,14 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 // Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
+}
+
+// Modify the table to add recaptcha_token
+$alter_sql = "ALTER TABLE user_info ADD recaptcha_token VARCHAR(255) NOT NULL AFTER password";
+if ($conn->query($alter_sql) === TRUE) {
+    echo "Column recaptcha_token added successfully.<br>";
+} else {
+    echo "Error adding column: " . $conn->error . "<br>";
 }
 
 // Query to describe the table
