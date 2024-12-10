@@ -49,7 +49,7 @@
 		uni_modal("Create an Account", 'signup.php?redirect=index.php?page=home')
 	})
     $('#login-frm').submit(function (e) {
-        e.preventDefault(); // Prevent the form from submitting immediately
+        e.preventDefault(); // Prevent the default form submission
 
         // Disable button and show loading text
         $('#login-frm button[type="submit"]').attr('disabled', true).html('Logging in...');
@@ -61,19 +61,19 @@
 
         // Generate reCAPTCHA token
         grecaptcha.execute('6LcoapYqAAAAADr1OaM8FGmlLTTnF0nNkGOCmVI0', { action: 'login' }).then(function (token) {
-            console.log('Generated reCAPTCHA Token:', token);  // Log the token
+            console.log('Generated reCAPTCHA Token:', token);  // Log the token to check
 
-            // Append the token to the form as a hidden input
+            // Append the token as a hidden input to the form
             $('#login-frm').append('<input type="hidden" name="recaptcha_token" value="' + token + '">');
 
-            // Check if token is appended successfully
+            // Check if the token is appended to the form
             console.log('Form data after appending token:', $('#login-frm').serialize());
 
             // Submit the form data via AJAX
             $.ajax({
                 url: 'admin/ajax.php?action=login2',
                 method: 'POST',
-                data: $('#login-frm').serialize(), // Serialize all form data including the reCAPTCHA token
+                data: $('#login-frm').serialize(), // Serialize all form data
                 dataType: 'json',
                 success: function (resp) {
                     if (resp.status === 'success') {

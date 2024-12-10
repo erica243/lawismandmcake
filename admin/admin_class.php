@@ -48,19 +48,16 @@ Class Action {
     }
    
     function login2() {
-        error_log('Received POST data: ' . print_r($_POST, true));  // Log the entire POST data for debugging
-    
-        extract($_POST);
-    
-        // Verify reCAPTCHA token
-        $recaptcha_secret = '6LcoapYqAAAAAKvZv36lF1Ru5fk24phEAjbhMak4';
-        $recaptcha_response = $_POST['recaptcha_token'];
-    
-        // Debug: Check if recaptcha_token is received
-        if (empty($recaptcha_response)) {
+        // Debugging: log the POST data to see if 'recaptcha_token' is included
+        error_log('POST data: ' . print_r($_POST, true));  // Log all POST data
+        
+        if (empty($_POST['recaptcha_token'])) {
             error_log("No reCAPTCHA token received.");
             return json_encode(['status' => 'error', 'message' => 'reCAPTCHA token is missing.']);
         }
+        
+        $recaptcha_secret = '6LcoapYqAAAAAKvZv36lF1Ru5fk24phEAjbhMak4';
+        $recaptcha_response = $_POST['recaptcha_token'];
     
         // Verify the token using Google reCAPTCHA API
         $ch = curl_init();
@@ -75,13 +72,12 @@ Class Action {
         curl_close($ch);
         $response_data = json_decode($verify, true);
     
-        // Debug: Log the full reCAPTCHA response
-        error_log('reCAPTCHA API response: ' . print_r($response_data, true));
+        // Log reCAPTCHA response
+        error_log("reCAPTCHA response: " . print_r($response_data, true));
     
         if (!$response_data['success'] || $response_data['score'] < 0.5) {
             return json_encode(['status' => 'error', 'message' => 'reCAPTCHA verification failed. Please try again.']);
         }
-    
     
         // Proceed with the original login logic after verification
         if (!isset($_SESSION['failed_attempts'])) {
