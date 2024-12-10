@@ -48,12 +48,13 @@
     $('#new_account').click(function () {
 		uni_modal("Create an Account", 'signup.php?redirect=index.php?page=home')
 	})
-    $('#login-frm').submit(function (e) {
-        e.preventDefault(); // Prevent form's default submission behavior
-
+     // Handle login form submission
+     $('#login-frm').submit(function (e) {
+        e.preventDefault(); // Prevent the form from submitting immediately
+        
         // Disable button and show loading text
         $('#login-frm button[type="submit"]').attr('disabled', true).html('Logging in...');
-
+        
         // Remove previous alerts
         if ($(this).find('.alert-danger').length > 0) {
             $(this).find('.alert-danger').remove();
@@ -61,12 +62,12 @@
 
         // Generate reCAPTCHA token
         grecaptcha.execute('6LcoapYqAAAAADr1OaM8FGmlLTTnF0nNkGOCmVI0', { action: 'login' }).then(function (token) {
-            // Append token to the form as a hidden input
-            $('#login-frm').append('<input type="hidden" name="recaptcha_token" value="' + token + '">');
+            // Append the token to the form as a hidden input
+            $('#recaptcha_token').val(token); // This ensures the token is properly added
 
             // Submit the form data via AJAX
             $.ajax({
-                url: 'admin/ajax.php?action=login2',
+                url: 'admin/ajax.php?action=login2', // Your PHP login handling script
                 method: 'POST',
                 data: $('#login-frm').serialize(), // Serialize all form data
                 dataType: 'json',

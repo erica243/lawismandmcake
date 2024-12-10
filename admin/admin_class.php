@@ -57,7 +57,7 @@ Class Action {
             // Debug: Check if recaptcha_token is received
             if (empty($recaptcha_response)) {
                 error_log("No reCAPTCHA token received.");
-                return json_encode(['status' => 'error', 'message' => '']);
+                return json_encode(['status' => 'error', 'message' => 'reCAPTCHA token is missing.']);
             }
         
             // Verify the token using Google reCAPTCHA API
