@@ -33,70 +33,87 @@ Class Action {
         return 3;
     }
 
+    Manilyn Verdida De Mesa
     function login2() {
-        extract($_POST);
+            extract($_POST);
         
-        // Initialize session variables for tracking login attempts
-        if (!isset($_SESSION['failed_attempts'])) {
-            $_SESSION['failed_attempts'] = 0;
-            $_SESSION['last_failed_time'] = time();
-        }
-    
-        // Set max attempts and lockout time (in seconds)
-        $max_attempts = 3;
-        $lockout_time = 10; // 15 minutes
-    
-        // If the max attempts are reached, check if lockout time has passed
-        if ($_SESSION['failed_attempts'] >= $max_attempts) {
-            // If lockout time has not passed, block login
-            if (time() - $_SESSION['last_failed_time'] < $lockout_time) {
-                $remaining_lockout = $lockout_time - (time() - $_SESSION['last_failed_time']);
-                return json_encode(['status' => 'error', 'message' => 'Too many failed attempts. Please try again in ' . ceil($remaining_lockout / 60) . ' minutes.']);
-            } else {
-                // Reset failed attempts after lockout time
-                $_SESSION['failed_attempts'] = 0;
-            }
-        }
-    
-        // Query the user by email
-        $qry = $this->db->query("SELECT * FROM user_info WHERE email = '".$email."'");
+            // Verify reCAPTCHA token
+            $recaptcha_secret = '6LcoapYqAAAAAKvZv36lF1Ru5fk24phEAjbhMak4';
+            $recaptcha_response = $_POST['recaptcha_token'];
         
-        if ($qry->num_rows > 0) {
-            $result = $qry->fetch_array();
-            
-            // Check if the account is active
-            if ($result['active'] == 0) {
-                return json_encode(['status' => 'error', 'message' => 'Your account is not activated. Please verify your email.']);
+            // Debug: Check if recaptcha_token is received
+            if (empty($recaptcha_response)) {
+                error_log("No reCAPTCHA token received.");
+                return json_encode(['status' => 'error', 'message' => 'reCAPTCHA token is missing.']);
             }
-    
-            // Verify password
-            $is_verified = password_verify($password, $result['password']);
-            
-            if ($is_verified) {
-                // Reset failed attempts on successful login
+        
+            // Verify the token using Google reCAPTCHA API
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, "https://www.google.com/recaptcha/api/siteverify");
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(['secret' => $recaptcha_secret, 'response' => $recaptcha_response]));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $verify = curl_exec($ch);
+            curl_close($ch);
+            $response_data = json_decode($verify, true);
+        
+            // Debug: Log the full reCAPTCHA response
+            error_log(print_r($response_data, true));
+        
+            if (!$response_data['success'] || $response_data['score'] < 0.5) {
+                return json_encode(['status' => 'error', 'message' => 'reCAPTCHA verification failed. Please try again.']);
+            }
+        
+            // Proceed with the original login logic after verification
+            if (!isset($_SESSION['failed_attempts'])) {
                 $_SESSION['failed_attempts'] = 0;
-    
-                // Set session variables for the logged-in user
-                foreach ($result as $key => $value) {
-                    if ($key != 'password' && !is_numeric($key)) {
-                        $_SESSION['login_'.$key] = $value;
-                    }
+                $_SESSION['last_failed_time'] = time();
+            }
+        
+            $max_attempts = 3;
+            $lockout_time = 10;
+        
+            if ($_SESSION['failed_attempts'] >= $max_attempts) {
+                if (time() - $_SESSION['last_failed_time'] < $lockout_time) {
+                    $remaining_lockout = $lockout_time - (time() - $_SESSION['last_failed_time']);
+                    return json_encode(['status' => 'error', 'message' => 'Too many failed attempts. Please try again in ' . ceil($remaining_lockout / 60) . ' minutes.']);
+                } else {
+                    $_SESSION['failed_attempts'] = 0;
                 }
-    
-                // Update the cart with the logged-in user ID
-                $ip = isset($_SERVER['HTTP_CLIENT_IP']) ? $_SERVER['HTTP_CLIENT_IP'] : (isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR']);
-                $this->db->query("UPDATE cart SET user_id = '".$_SESSION['login_user_id']."' WHERE client_ip = '$ip'");
-    
-                return json_encode(['status' => 'success']);
             }
+        
+            $qry = $this->db->query("SELECT * FROM user_info WHERE email = '".$email."'");
+        
+            if ($qry->num_rows > 0) {
+                $result = $qry->fetch_array();
+        
+                if ($result['active'] == 0) {
+                    return json_encode(['status' => 'error', 'message' => 'Your account is not activated. Please verify your email.']);
+                }
+        
+                $is_verified = password_verify($password, $result['password']);
+        
+                if ($is_verified) {
+                    $_SESSION['failed_attempts'] = 0;
+        
+                    foreach ($result as $key => $value) {
+                        if ($key != 'password' && !is_numeric($key)) {
+                            $_SESSION['login_'.$key] = $value;
+                        }
+                    }
+        
+                    $ip = isset($_SERVER['HTTP_CLIENT_IP']) ? $_SERVER['HTTP_CLIENT_IP'] : (isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR']);
+                    $this->db->query("UPDATE cart SET user_id = '".$_SESSION['login_user_id']."' WHERE client_ip = '$ip'");
+        
+                    return json_encode(['status' => 'success']);
+                }
+            }
+        
+            $_SESSION['failed_attempts']++;
+            $_SESSION['last_failed_time'] = time();
+        
+            return json_encode(['status' => 'error', 'message' => 'Email or password is incorrect.']);
         }
-    
-        // Failed login attempt: Increment the counter and record the time of failure
-        $_SESSION['failed_attempts']++;
-        $_SESSION['last_failed_time'] = time();
-    
-        return json_encode(['status' => 'error', 'message' => 'Email or password is incorrect.']);
-    }
     function logout() {
         session_destroy();
         foreach ($_SESSION as $key => $value) {
