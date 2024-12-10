@@ -41,6 +41,9 @@ if (!$order) {
 $order_number = htmlspecialchars($order['order_number']);
 $email = htmlspecialchars($order['email']);
 
+// SweetAlert feedback initialization
+$sweetAlertMessage = null;
+
 // Handle the form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $comment = htmlspecialchars($_POST['comment']);
@@ -59,41 +62,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $allowed_mime_types = ['image/jpeg', 'image/png', 'image/gif'];
 
         if (!in_array($file_extension, $allowed_extensions) || !in_array($file_mime, $allowed_mime_types)) {
-            die("Invalid file type. Only JPG, JPEG, PNG, and GIF files are allowed.");
-        }
-
-        if ($uploaded_file['size'] > $max_file_size) {
-            die("File size exceeds the maximum limit of 2MB.");
-        }
-
-        $target_path = $upload_dir . uniqid() . '.' . $file_extension;
-
-        // Ensure upload directory exists
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-        }
-
-        // Move uploaded file
-        if (move_uploaded_file($uploaded_file['tmp_name'], $target_path)) {
-            $photo_path = $target_path;
+            $sweetAlertMessage = "Invalid file type. Only JPG, JPEG, PNG, and GIF files are allowed.";
+        } elseif ($uploaded_file['size'] > $max_file_size) {
+            $sweetAlertMessage = "File size exceeds the maximum limit of 2MB.";
         } else {
-            die("Failed to upload file. Please try again.");
+            $target_path = $upload_dir . uniqid() . '.' . $file_extension;
+
+            // Ensure upload directory exists
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+
+            // Move uploaded file
+            if (move_uploaded_file($uploaded_file['tmp_name'], $target_path)) {
+                $photo_path = $target_path;
+            } else {
+                $sweetAlertMessage = "Failed to upload file. Please try again.";
+            }
         }
     } else {
         $photo_path = null; // No file uploaded
     }
 
-    // Insert comment into the database, including the logged-in user's ID
-    $stmt = $conn->prepare("INSERT INTO messages (user_id, order_number, email, message, photo_path) VALUES (?, ?, ?, ?, ?)");
-    if (!$stmt) {
-        die("Failed to prepare insert query: " . $conn->error);
-    }
-    $stmt->bind_param("issss", $user_id, $order_number, $email, $comment, $photo_path);
-    $stmt->execute();
+    if (!$sweetAlertMessage) {
+        // Insert comment into the database
+        $stmt = $conn->prepare("INSERT INTO messages (user_id, order_number, email, message, photo_path) VALUES (?, ?, ?, ?, ?)");
+        if (!$stmt) {
+            die("Failed to prepare insert query: " . $conn->error);
+        }
+        $stmt->bind_param("issss", $user_id, $order_number, $email, $comment, $photo_path);
+        $stmt->execute();
 
-    // Redirect to avoid resubmitting on refresh
-    header("Location: ?order_id=" . $order_id . "&submitted=1");
-    exit();
+        // Redirect to avoid resubmitting on refresh
+        header("Location: ?order_id=" . $order_id . "&submitted=1");
+        exit();
+    }
 }
 
 // Delete comment functionality
@@ -107,7 +110,7 @@ if (isset($_GET['delete_id'])) {
     }
 
     // Bind parameters and execute the query
-    $stmt->bind_param("ii", $user_id, $delete_id); // Only the owner can delete their comment
+    $stmt->bind_param("ii", $user_id, $delete_id);
     $stmt->execute();
 }
 
@@ -121,7 +124,6 @@ $stmt->execute();
 $comments = $stmt->get_result();
 ?>
 
-<
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -290,5 +292,15 @@ $comments = $stmt->get_result();
             });
         });
     </script>
+    <?php if ($sweetAlertMessage): ?>
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: "<?php echo htmlspecialchars($sweetAlertMessage); ?>",
+        });
+    </script>
+<?php endif; ?>
+
 </body>
 </html>
