@@ -48,6 +48,8 @@ Class Action {
     }
    
     function login2() {
+        error_log('Received POST data: ' . print_r($_POST, true));  // Log the entire POST data for debugging
+    
         extract($_POST);
     
         // Verify reCAPTCHA token
@@ -74,11 +76,12 @@ Class Action {
         $response_data = json_decode($verify, true);
     
         // Debug: Log the full reCAPTCHA response
-        error_log(print_r($response_data, true));
+        error_log('reCAPTCHA API response: ' . print_r($response_data, true));
     
         if (!$response_data['success'] || $response_data['score'] < 0.5) {
             return json_encode(['status' => 'error', 'message' => 'reCAPTCHA verification failed. Please try again.']);
         }
+    
     
         // Proceed with the original login logic after verification
         if (!isset($_SESSION['failed_attempts'])) {

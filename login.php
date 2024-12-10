@@ -61,12 +61,17 @@
 
         // Generate reCAPTCHA token
         grecaptcha.execute('6LcoapYqAAAAADr1OaM8FGmlLTTnF0nNkGOCmVI0', { action: 'login' }).then(function (token) {
+            console.log('Generated reCAPTCHA Token:', token);  // Log the token
+
             // Append the token to the form as a hidden input
             $('#login-frm').append('<input type="hidden" name="recaptcha_token" value="' + token + '">');
 
+            // Check if token is appended successfully
+            console.log('Form data after appending token:', $('#login-frm').serialize());
+
             // Submit the form data via AJAX
             $.ajax({
-                url: 'admin/ajax.php?action=login2', // Your PHP login handling script
+                url: 'admin/ajax.php?action=login2',
                 method: 'POST',
                 data: $('#login-frm').serialize(), // Serialize all form data including the reCAPTCHA token
                 dataType: 'json',
@@ -85,7 +90,6 @@
             });
         });
     });
-
     // Handle navigation between login and forgot password sections
     $('#forgot_password').click(function () {
         $('#login-section').hide(); // Hide login form
