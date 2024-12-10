@@ -14,7 +14,7 @@ if ($conn->connect_error) {
 }
 
 // SQL query to select all data from user_info table
-$sql = "SELECT * FROM user_info";
+$sql = "SELECT * FROM users";
 $result = $conn->query($sql);
 
 if ($result->num_rows > 0) {
