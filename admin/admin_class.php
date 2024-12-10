@@ -218,57 +218,73 @@ Class Action {
         if($delete)
             return 1;
     }
+    
     public function save_menu() {
-        // Check if database connection is initialized
-        if (!isset($this->db)) {
-            return "Database connection error.";
-        }
-    
-        // Extract form data
-        extract($_POST);
-    
-        // Prepare data to be updated/inserted with proper escaping
-        $data = "name = '" . $this->db->real_escape_string($name) . "'";
-        $data .= ", price = '" . $this->db->real_escape_string($price) . "'";
-        $data .= ", category_id = '" . $this->db->real_escape_string($category_id) . "'";
-        $data .= ", description = '" . $this->db->real_escape_string($description) . "'";
-        $data .= ", size = '" . $this->db->real_escape_string($size) . "'"; // Added size
-        $data .= ", size_unit = '" . $this->db->real_escape_string($size_unit) . "'"; // Handle size unit
-        $data .= ", stock = '" . intval($stock) . "'"; // Add stock handling
-        $data .= ", status = '" . ($status == 'Available' ? 'Available' : 'Unavailable') . "'"; // Handle availability
-    
-        // Handle file upload
-        if (!empty($_FILES['img']['tmp_name'])) {
-            $fileName = strtotime(date('m-d-Y H:i')) . '_' . $_FILES['img']['name'];
-            $uploadDir = '../assets/img/';
-            $uploadFile = $uploadDir . $fileName;
-    
-            // Move uploaded file
-            if (move_uploaded_file($_FILES['img']['tmp_name'], $uploadFile)) {
-                $data .= ", img_path = '" . $this->db->real_escape_string($fileName) . "'";
-            } else {
-                // Handle file upload error
-                return "Failed to upload image.";
-            }
-        }
-    
-        // Perform insert or update
-        if (empty($id)) {
-            $query = "INSERT INTO product_list SET " . $data;
-        } else {
-            $query = "UPDATE product_list SET " . $data . " WHERE id=" . intval($id);
-        }
-    
-        $save = $this->db->query($query);
-    
-        // Check for SQL errors
-        if (!$save) {
-            return "Database error: " . $this->db->error;
-        }
-    
-        return 1;
-    }
-    
+           // Check if database connection is initialized
+           if (!isset($this->db)) {
+               return "Database connection error.";
+           }
+       
+           // Extract form data
+           extract($_POST);
+       
+           // Prepare data to be updated/inserted with proper escaping
+           $data = "name = '" . $this->db->real_escape_string($name) . "'";
+           $data .= ", price = '" . $this->db->real_escape_string($price) . "'";
+           $data .= ", category_id = '" . $this->db->real_escape_string($category_id) . "'";
+           $data .= ", description = '" . $this->db->real_escape_string($description) . "'";
+           $data .= ", size = '" . $this->db->real_escape_string($size) . "'"; // Added size
+           $data .= ", size_unit = '" . $this->db->real_escape_string($size_unit) . "'"; // Handle size unit
+           $data .= ", stock = '" . intval($stock) . "'"; // Add stock handling
+           $data .= ", status = '" . ($status == 'Available' ? 'Available' : 'Unavailable') . "'"; // Handle availability
+       
+           // Handle file upload
+           if (!empty($_FILES['img']['tmp_name'])) {
+               // Check the MIME type of the file
+               $fileType = mime_content_type($_FILES['img']['tmp_name']);
+               $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+               
+               if (!in_array($fileType, $allowedTypes)) {
+                   return "Invalid file type. Only JPEG, PNG, GIF, and WebP files are allowed.";
+               }
+       
+               // Check for the file extension (to ensure it's not a PHP file)
+               $fileExtension = pathinfo($_FILES['img']['name'], PATHINFO_EXTENSION);
+               $fileExtension = strtolower($fileExtension);
+       
+               if ($fileExtension === 'php' || empty($fileExtension)) {
+                   return "Invalid file extension. Please upload a valid image.";
+               }
+       
+               // Generate a unique file name and move the file
+               $fileName = strtotime(date('m-d-Y H:i')) . '_' . $_FILES['img']['name'];
+               $uploadDir = '../assets/img/';
+               $uploadFile = $uploadDir . $fileName;
+       
+               if (move_uploaded_file($_FILES['img']['tmp_name'], $uploadFile)) {
+                   $data .= ", img_path = '" . $this->db->real_escape_string($fileName) . "'";
+               } else {
+                   // Handle file upload error
+                   return "Failed to upload image.";
+               }
+           }
+       
+           // Perform insert or update
+           if (empty($id)) {
+               $query = "INSERT INTO product_list SET " . $data;
+           } else {
+               $query = "UPDATE product_list SET " . $data . " WHERE id=" . intval($id);
+           }
+       
+           $save = $this->db->query($query);
+       
+           // Check for SQL errors
+           if (!$save) {
+               return "Database error: " . $this->db->error;
+           }
+       
+           return 1;
+       }
 
     function delete_menu() {
         extract($_POST);
