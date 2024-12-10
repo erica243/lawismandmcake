@@ -47,37 +47,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $uploaded_file = $_FILES['photo'] ?? null;
 
     // Handle optional photo upload
-    if ($uploaded_file && $uploaded_file['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = 'uploads/';
-        $file_name = basename($uploaded_file['name']);
-        $target_path = $upload_dir . time() . '_' . $file_name;
+   // Handle optional photo upload
+if ($uploaded_file && $uploaded_file['error'] === UPLOAD_ERR_OK) {
+    $upload_dir = 'uploads/';
+    $file_name = basename($uploaded_file['name']);
+    $file_extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+    $file_mime = mime_content_type($uploaded_file['tmp_name']);
+    $max_file_size = 2 * 1024 * 1024; // 2MB
 
-        // Ensure upload directory exists
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-        }
+    // Validate file extension
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+    $allowed_mime_types = ['image/jpeg', 'image/png', 'image/gif'];
 
-        // Move uploaded file
-        if (move_uploaded_file($uploaded_file['tmp_name'], $target_path)) {
-            $photo_path = $target_path;
-        } else {
-            $photo_path = null; // Set to null if upload fails
-        }
+    if (!in_array($file_extension, $allowed_extensions) || !in_array($file_mime, $allowed_mime_types)) {
+        die("Invalid file type. Only JPG, JPEG, PNG, and GIF files are allowed.");
+    }
+
+    if ($uploaded_file['size'] > $max_file_size) {
+        die("File size exceeds the maximum limit of 2MB.");
+    }
+
+    $target_path = $upload_dir . uniqid() . '.' . $file_extension;
+
+    // Ensure upload directory exists
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0777, true);
+    }
+
+    // Move uploaded file
+    if (move_uploaded_file($uploaded_file['tmp_name'], $target_path)) {
+        $photo_path = $target_path;
     } else {
-        $photo_path = null; // No file uploaded
+        die("Failed to upload file. Please try again.");
     }
-
-    // Insert comment into the database, including the logged-in user's ID
-    $stmt = $conn->prepare("INSERT INTO messages (user_id, order_number, email, message, photo_path) VALUES (?, ?, ?, ?, ?)");
-    if (!$stmt) {
-        die("Failed to prepare insert query: " . $conn->error);
-    }
-    $stmt->bind_param("issss", $user_id, $order_number, $email, $comment, $photo_path);
-    $stmt->execute();
-
-    // Redirect to avoid resubmitting on refresh
-    header("Location: ?order_id=" . $order_id . "&submitted=1");
-    exit();
+} else {
+    $photo_path = null; // No file uploaded
 }
 
 // Delete comment functionality
