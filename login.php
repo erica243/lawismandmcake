@@ -1,7 +1,5 @@
 
-<?php 
-header('Content-Type: application/json');
-?>
+
 <?php session_start(); ?>
 
 <div class="container-fluid">
