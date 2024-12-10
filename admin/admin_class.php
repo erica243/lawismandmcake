@@ -46,7 +46,6 @@ Class Action {
         }
         return 3;
     }
-    
    
     function login2() {
             extract($_POST);
@@ -142,6 +141,7 @@ Class Action {
             }
             header("location:login.php");
         }
+        
 
     function logout2() {
         session_destroy();
