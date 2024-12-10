@@ -15,7 +15,7 @@ if ($conn->connect_error) {
 }
 
 // Query to describe the table
-$table_name = 'users_info';
+$table_name = 'user_info';
 $sql = "DESCRIBE $table_name";
 
 $result = $conn->query($sql);
