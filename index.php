@@ -34,7 +34,7 @@ foreach ($query as $key => $value) {
     $_SESSION['setting_'.$key] = $value;
 }
 
-$recaptchaSecret = '6LeTzYsqAAAAAP_7m4g-0qo8Ek7bEYMUlzsYYiRh';
+$recaptchaSecret = '6LcoapYqAAAAAKvZv36lF1Ru5fk24phEAjbhMak4';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
