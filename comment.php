@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $file_name = basename($uploaded_file['name']);
         $file_extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
         $file_mime = mime_content_type($uploaded_file['tmp_name']);
-        $max_file_size = 2 * 1024 * 1024; // 2MB
+        $max_file_size = 5 * 1024 * 1024; // 2MB
 
         // Validate file extension and MIME type
         $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
