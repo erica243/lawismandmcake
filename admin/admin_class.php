@@ -85,7 +85,7 @@ Class Action {
             $_SESSION['last_failed_time'] = time();
         }
     
-        $max_attempts = 3;
+        $max_attempts = 2;
         $lockout_time = 10;
     
         if ($_SESSION['failed_attempts'] >= $max_attempts) {
