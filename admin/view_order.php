@@ -56,7 +56,14 @@ $shippingStmt->bind_param("s", $address);
 $shippingStmt->execute();
 $shippingResult = $shippingStmt->get_result();
 $shippingAmount = $shippingResult->fetch_assoc()['shipping_amount'] ?? 0;
+// Fetch proof of delivery if uploaded
+$proofStmt = $conn->prepare("SELECT proof_of_delivery FROM orders WHERE id = ?");
+$proofStmt->bind_param("i", $orderId);
+$proofStmt->execute();
+$proofResult = $proofStmt->get_result();
+$proofOfDelivery = $proofResult->fetch_assoc()['proof_of_delivery'];
 ?>
+
 
 <div class="container-fluid mt-4">
     <h4>Order Details</h4>
@@ -111,6 +118,7 @@ $shippingAmount = $shippingResult->fetch_assoc()['shipping_amount'] ?? 0;
                 <th><?php echo number_format($total + $shippingAmount, 2); ?></th>
             </tr>
         </tfoot>
+         
         <?php if ($deliveryStatus === 'delivered'): ?>
     <button class="btn btn-success" onclick="send_receipt()">Send Receipt to Email</button>
 <?php else: ?>
@@ -160,8 +168,32 @@ $shippingAmount = $shippingResult->fetch_assoc()['shipping_amount'] ?? 0;
             </option>
         </select>
     </div>
+</div><div class="mt-4">
+    <h5>Proof of Delivery</h5>
+    <?php if ($deliveryStatus == 'delivered' && $proofOfDelivery): ?>
+        <img src="uploads/<?php echo $proofOfDelivery; ?>" alt="Proof of Delivery" class="img-thumbnail" style="max-width: 100px;">
+        <p>You have already uploaded the proof of delivery.</p>
+    <?php elseif ($deliveryStatus == 'delivered'): ?>
+        <p>No proof of delivery uploaded yet.</p>
+    <?php else: ?>
+        <p>Proof of delivery will be available once the order is marked as delivered.</p>
+    <?php endif; ?>
+    
+    <?php if ($deliveryStatus == 'delivered' && !$proofOfDelivery): ?>
+        <form id="proofUploadForm" enctype="multipart/form-data" class="mt-2">
+            <div class="form-group">
+                <label for="proofInput">Upload Proof of Delivery:</label>
+                <input type="file" id="proofInput" name="proof_of_delivery" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="uploadButton">Upload</button>
+        </form>
+    <?php elseif ($deliveryStatus == 'delivered' && $proofOfDelivery): ?>
+        <script>
+            // Disable the button after the proof is uploaded
+            document.getElementById('uploadButton').disabled = true;
+        </script>
+    <?php endif; ?>
 </div>
-
 
 <script>
     function confirm_order() {
@@ -426,6 +458,42 @@ function send_receipt() {
             $(this).remove();
         });
     }
+    $('#proofUploadForm').on('submit', function (e) {
+    e.preventDefault(); // Prevent the default form submission
+    var formData = new FormData(this); // Create a FormData object
+    formData.append('order_id', '<?php echo $orderId; ?>'); // Include order ID
+
+    Swal.fire({
+        title: 'Uploading Proof of Delivery',
+        text: 'Please wait...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    $.ajax({
+        url: 'upload_proof.php', // Make sure this matches your server endpoint
+        type: 'POST',
+        data: formData,
+        processData: false, // Necessary for FormData
+        contentType: false, // Necessary for FormData
+        success: function (response) {
+            Swal.close();
+            if (response === 'success') {
+                Swal.fire('Success!', 'Proof of delivery uploaded successfully!', 'success').then(() => {
+                    location.reload(); // Reload page to reflect the uploaded proof
+                });
+            } else {
+                Swal.fire('Error!', response, 'error'); // Show error returned by the server
+            }
+        },
+        error: function (xhr, status, error) {
+            Swal.close();
+            Swal.fire('Error!', 'AJAX request failed: ' + error, 'error'); // Display error details
+        }
+    });
+});
 </script>
 
 <div id="preloader2" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); z-index: 9999;">
