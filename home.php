@@ -336,7 +336,26 @@ $page_btn_count = ceil($all_menu / $limit);
     border-color: #dee2e6; /* Border color remains same */
 }
 
+/* Ensure the buttons are centered and responsive */
+.paginate-btns {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap; /* This will allow pagination buttons to wrap on smaller screens */
+    gap: 5px; /* Adds spacing between pagination buttons */
+}
 
+.paginate-btns .btn {
+    padding: 8px 12px; /* Adjust button padding for mobile */
+    font-size: 14px; /* Adjust font size for mobile */
+}
+
+@media (max-width: 576px) {
+    /* Adjust pagination buttons for smaller screens */
+    .paginate-btns .btn {
+        padding: 6px 10px; /* Smaller padding for mobile */
+        font-size: 12px; /* Smaller font size for mobile */
+    }
+}
 
     </style>
 </head>
@@ -417,9 +436,8 @@ $page_btn_count = ceil($all_menu / $limit);
                 </div>
             </div>
             <?php endwhile; ?>
-        </div>
-<div class="w-100 mx-4 d-flex justify-content-center">
-    <div class="btn-group paginate-btns">
+            <div class="w-100 mx-4 d-flex justify-content-center">
+    <div class="btn-group paginate-btns flex-wrap justify-content-center">
         <!-- Disable Prev button if on the first page -->
         <a class="btn btn-default border border-dark text-gray" 
            <?php echo ($page == 0 || $page_btn_count == 0) ? 'disabled' : ''; ?> 
@@ -437,6 +455,7 @@ $page_btn_count = ceil($all_menu / $limit);
            href="./?_page=<?php echo ($page + 2); ?>&search=<?php echo urlencode($search); ?>">Next</a>
     </div>
 </div>
+
 
 
     </section>

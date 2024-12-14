@@ -12,10 +12,12 @@ $user_id = $_SESSION['login_user_id'];
 $query = "SELECT o.*, 
           DATE_FORMAT(o.order_date, '%M %d, %Y %h:%i %p') as formatted_order_date,
           DATE_FORMAT(o.status_updated_at, '%M %d, %Y %h:%i %p') as last_update,
-          DATE_FORMAT(o.estimated_delivery, '%M %d, %Y') as delivery_date
+          DATE_FORMAT(o.estimated_delivery, '%M %d, %Y') as delivery_date,
+          o.proof_of_delivery
           FROM orders o
           JOIN user_info u ON u.email = o.email
           WHERE o.id = ? AND u.user_id = ?";
+
 
 $stmt = $conn->prepare($query);
 if (!$stmt) {
@@ -206,6 +208,7 @@ $progress_percentage = ($current_index / $total_stages) * 100;
                 margin-bottom: 1.5rem;
             }
         }
+        
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -261,6 +264,31 @@ $progress_percentage = ($current_index / $total_stages) * 100;
                     <?php endforeach; ?>
                 </div>
             </div>
+            <?php
+if ($order['proof_of_delivery']) {
+    $proofOfDelivery = 'admin/uploads/' . htmlspecialchars($order['proof_of_delivery']);
+    
+    // Check if the image exists before displaying it
+    if (file_exists($proofOfDelivery)) {
+        // Display the proof of delivery image
+        echo '<img src="' . $proofOfDelivery . '" alt="Proof of Delivery" class="img-thumbnail" style="max-width: 100px;">';
+    } else {
+        echo '<p class="text-gray-500">No proof of delivery available.</p>';
+    }
+} else {
+    // If proof_of_delivery is not set or is null
+    echo '<p class="text-gray-500">No proof of delivery uploaded.</p>';
+}
+?>
+
+
+       
+<div id="proofImageModal" class="modal fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center hidden z-50">
+    <div class="modal-content bg-white p-4 rounded-lg shadow-lg max-w-4xl w-full">
+        <button onclick="closeModal('#proofImageModal')" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2">X</button>
+        <img id="modalImage" class="w-full max-h-[80vh] object-contain" alt="Full Proof of Delivery">
+    </div>
+</div> 
 
             <?php if ($order['tracking_notes']): ?>
             <div class="tracking-notes bg-gray-50 rounded-lg p-6">
@@ -272,6 +300,21 @@ $progress_percentage = ($current_index / $total_stages) * 100;
     </div>
 
     <script>
+        // Open Modal with the clicked image
+    function openModal(modalId) {
+        const modal = document.querySelector(modalId);
+        const imageSrc = event.target.src; // Get the source of the clicked image
+        const modalImage = modal.querySelector('#modalImage');
+        modalImage.src = imageSrc; // Set the image source for the modal
+
+        modal.classList.remove('hidden'); // Show the modal
+    }
+
+    // Close the Modal
+    function closeModal(modalId) {
+        const modal = document.querySelector(modalId);
+        modal.classList.add('hidden'); // Hide the modal
+    }
         feather.replace();
     </script>
 </body>
