@@ -116,6 +116,65 @@ FROM orders
 WHERE delivery_status IN ('confirmed', 'preparing', 'ready', 'in_transit', 'delivered')
 ");
 $confirmed_orders = $confirmed_orders_result->num_rows;
+$top_products_query = "
+    SELECT 
+        p.id, 
+        p.name, 
+        SUM(ol.qty) as total_quantity_sold, 
+        SUM(ol.qty * p.price) as total_product_sales
+    FROM 
+        order_list ol
+    JOIN 
+        product_list p ON ol.product_id = p.id
+    JOIN 
+        orders o ON ol.order_id = o.id
+    WHERE 
+        o.delivery_status IN ('pending','confirmed', 'preparing', 'ready','in_transit','delivered')
+    GROUP BY 
+        p.id, p.name
+    ORDER BY 
+        total_product_sales DESC
+    LIMIT 10
+";
+$top_products_result = $conn->query($top_products_query);
+$top_products = [];
+while ($row = $top_products_result->fetch_assoc()) {
+    $top_products[] = $row;
+}
+
+// New query to fetch monthly sales for top products
+$monthly_product_sales = [];
+$top_product_ids = array_column($top_products, 'id');
+if (!empty($top_product_ids)) {
+    $product_ids_string = implode(',', $top_product_ids);
+    
+    for ($i = 0; $i < 12; $i++) {
+        $date = date('Y-m', strtotime("-$i months"));
+        $monthly_product_query = "
+        SELECT 
+            p.id, 
+            p.name, 
+            SUM(ol.qty * p.price) as monthly_product_sales
+        FROM 
+            order_list ol
+        JOIN 
+            product_list p ON ol.product_id = p.id
+        JOIN 
+            orders o ON ol.order_id = o.id
+        WHERE 
+            p.id IN ($product_ids_string)
+            AND o.delivery_status IN ('pending','confirmed', 'preparing','ready','in_transit','delivered')
+            AND DATE_FORMAT(o.created_at, '%Y-%m') = '$date'
+        GROUP BY 
+            p.id, p.name
+    ";
+        $monthly_product_result = $conn->query($monthly_product_query);
+        
+        while ($row = $monthly_product_result->fetch_assoc()) {
+            $monthly_product_sales[$date][$row['id']] = $row['monthly_product_sales'] ?: 0;
+        }
+    }
+}
 
 ?>
 
@@ -514,7 +573,21 @@ $confirmed_orders = $confirmed_orders_result->num_rows;
         </div>
     </div>
 </div>
-
+<div class="row m-3">
+    <div class="col-12">
+        <div class="card rounded-0 shadow">
+            <div class="card-body">
+                <h5 class="card-title">Most Sold Product</h5>
+                <div class="row mb-3">
+                    <div class="col-12">
+                    <h6>Product: <?= $top_products[0]['name'] ?> (<?= $top_products[0]['total_quantity_sold'] ?> quantity sold)</h6>
+                     </div>
+                </div>
+                <canvas id="topProductsSalesChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
   // Sales by Address Chart
 const salesByAddressCtx = document.getElementById('salesByAddressChart').getContext('2d');
@@ -611,7 +684,87 @@ const monthlySalesChart = new Chart(monthlySalesCtx, {
         }
     }
 });
+const topProductsSalesCtx = document.getElementById('topProductsSalesChart').getContext('2d');
+const monthLabels = <?= json_encode(array_keys($monthly_product_sales)) ?>;
 
+// Prepare datasets for top products
+const productDatasets = <?= json_encode(array_map(function($product) use ($monthly_product_sales) {
+    $productSalesData = [];
+    foreach (array_keys($monthly_product_sales) as $month) {
+        $productSalesData[] = isset($monthly_product_sales[$month][$product['id']]) 
+            ? $monthly_product_sales[$month][$product['id']] 
+            : 0;
+    }
+    return [
+        'label' => $product['name'],
+        'data' => $productSalesData,
+        'fill' => false,
+        'borderColor' => sprintf('#%06X', mt_rand(0, 0xFFFFFF)),
+        'tension' => 0.1
+    ];
+}, $top_products)) ?>;
+
+const topProductsSalesChart = new Chart(topProductsSalesCtx, {
+    type: 'line',
+    data: {
+        labels: monthLabels.reverse(), // Reverse to show most recent month first
+        datasets: productDatasets
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Most Sold Products'
+            },
+            legend: {
+                display: true,
+                position: 'bottom',  // Place the legend under the chart
+                labels: {
+                    boxWidth: 20,  // Size of the color box
+                    padding: 20,   // Spacing between legend items
+                    font: {
+                        size: 14  // Font size for legend text
+                    }
+                }
+            },
+            annotation: {
+                annotations: productDatasets.map(function(dataset, index) {
+                    return {
+                        type: 'line',
+                        borderColor: dataset.borderColor,  // Line color matches the dataset
+                        borderWidth: 2,
+                        label: {
+                            enabled: true,
+                            content: dataset.label,
+                            position: 'start',  // Position of the label
+                            font: {
+                                size: 14
+                            },
+                            padding: 5
+                        },
+                        // Coordinates of the start and end points of the line
+                        scaleID: 'y',
+                        value: Math.max(...dataset.data), // Use the max value for the Y coordinate
+                        endValue: 0,  // End line at Y=0 (the X-axis)
+                        xMin: 0,  // Start from the left of the chart
+                        xMax: monthLabels.length - 1,  // End at the last month
+                        drawTime: 'afterDatasetsDraw'  // Draw after the datasets
+                    };
+                })
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Sales Amount (₱)'
+                }
+            }
+        }
+    }
+});
 </script>
 
 </body>
